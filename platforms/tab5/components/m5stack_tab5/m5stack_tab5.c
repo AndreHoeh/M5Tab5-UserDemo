@@ -226,6 +226,8 @@ esp_err_t bsp_i2c_scan()
 
 static i2c_master_dev_handle_t i2c_dev_handle_pi4ioe1;
 static i2c_master_dev_handle_t i2c_dev_handle_pi4ioe2;
+static bool usb_c_detect_last_state        = false;
+static bool usb_c_detect_read_error_logged = false;
 
 // PI4IO registers
 #define PI4IO_REG_CHIP_RESET 0x01
@@ -441,23 +443,34 @@ bool bsp_headphone_detect()
     return ret;
 }
 
+// FIXME this will not work when charging is disabled because the charge chip will not signal charge status, but USB might be still connected. Need a better way to detect USB connection.
+// TODO update this reads charge state (on = charging, blink = anomaly (no battery or battery error), off = not charging)
 bool bsp_usb_c_detect()
 {
     uint8_t write_buf[2] = {0};
     uint8_t read_buf[1]  = {0};
 
     write_buf[0] = PI4IO_REG_IN_STA;
-    i2c_master_transmit_receive(i2c_dev_handle_pi4ioe2, write_buf, 1, read_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    esp_err_t ret = i2c_master_transmit_receive(i2c_dev_handle_pi4ioe2, write_buf, 1, read_buf, 1, I2C_MASTER_TIMEOUT_MS);
+    if (ret != ESP_OK) {
+        if (!usb_c_detect_read_error_logged) {
+            ESP_LOGW(TAG, "Charge status LED pin read failed: %s", esp_err_to_name(ret));
+            usb_c_detect_read_error_logged = true;
+        }
+        return usb_c_detect_last_state;
+    }
+
+    if (usb_c_detect_read_error_logged) {
+        ESP_LOGI(TAG, "Charge status LED pin read recovered");
+        usb_c_detect_read_error_logged = false;
+    }
 
     // printf("get %02x\n", read_buf[0]);
 
     // Get bit 6
-    bool ret = false;
-    if (read_buf[0] & 0b01000000) {
-        ret = true;
-    }
+    usb_c_detect_last_state = (read_buf[0] & 0b01000000) != 0;
 
-    return ret;
+    return usb_c_detect_last_state;
 }
 
 void bsp_set_ext_antenna_enable(bool en)

@@ -89,6 +89,7 @@ public:
 private:
     uint32_t _pm_data_update_time_count  = 0;
     uint32_t _cpu_temp_update_time_count = 0;
+    uint32_t _charge_status_led_last_seen_time = 0;
     std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Label> _label_voltage;
     std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Label> _label_current;
     std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Label> _label_battery_percent;

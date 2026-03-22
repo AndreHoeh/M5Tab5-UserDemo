@@ -26,6 +26,7 @@ static constexpr int16_t _label_current_pos_y = -303;
 static constexpr int16_t _label_battery_percent_pos_x = -500;
 static constexpr int16_t _label_battery_percent_pos_y = -271;
 static constexpr uint32_t _label_color        = 0x333333;
+static constexpr uint32_t _charge_status_led_absence_timeout_ms = 2000;
 
 void PanelPowerMonitor::init()
 {
@@ -64,22 +65,43 @@ void PanelPowerMonitor::init()
 
 void PanelPowerMonitor::update(bool isStacked)
 {
-    if (GetHAL()->millis() - _pm_data_update_time_count > 100) {
+    if (GetHAL()->millis() - _pm_data_update_time_count > 250) {
         GetHAL()->updatePowerMonitorData();
 
-        _label_voltage->setText(fmt::format("{:.2f}V", GetHAL()->powerMonitorData.busVoltage));
-        _label_current->setText(fmt::format("{:.2f}A", GetHAL()->powerMonitorData.shuntCurrent));
-        _label_battery_percent->setText(fmt::format("{:.0f}%", GetHAL()->powerMonitorData.batteryPercent));
+        const uint32_t now = GetHAL()->millis();
+        const bool charge_status_led_signal = GetHAL()->usbCDetect();
+        if (charge_status_led_signal) {
+            _charge_status_led_last_seen_time = now;
+        }
+
+        const bool usb_power_present = charge_status_led_signal ||
+                                       ((now - _charge_status_led_last_seen_time) < _charge_status_led_absence_timeout_ms);
+
+        // The charger status LED signal can be steady or blinking while USB-C power is present.
+        // Keep showing USB PWR until the signal has been absent for a sustained period.
+        if (usb_power_present) {
+            _label_voltage->setText("USB\nPWR");
+            _label_battery_percent->setText("");
+            _label_battery_percent->setOpa(0);
+            _label_current->setText("");
+            _label_current->setOpa(0);
+        } else {
+            _label_voltage->setText(fmt::format("{:.2f}V", GetHAL()->powerMonitorData.busVoltage));
+            _label_battery_percent->setText(fmt::format("{:.0f}%", GetHAL()->powerMonitorData.batteryPercent));
+            _label_battery_percent->setOpa(255);
+            _label_current->setText(fmt::format("{:.2f}A", GetHAL()->powerMonitorData.shuntCurrent));
+            _label_current->setOpa(255);
+        }
 
         if (GetHAL()->powerMonitorData.shuntCurrent < 0) {
-            _img_chg_arrow_up->setOpa(0);
+            _img_chg_arrow_up->setOpa(255);
             _img_chg_arrow_down->setOpa(0);
         } else {
-            _img_chg_arrow_up->setOpa(255);
+            _img_chg_arrow_up->setOpa(0);
             _img_chg_arrow_down->setOpa(255);
         }
 
-        _pm_data_update_time_count = GetHAL()->millis();
+        _pm_data_update_time_count = now;
     }
 
     if (GetHAL()->millis() - _cpu_temp_update_time_count > 1000) {
