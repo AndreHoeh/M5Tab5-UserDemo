@@ -23,6 +23,24 @@ static const std::string _tag = "panel-rtc";
 static const ui::Window::KeyFrame_t _kf_rtc_setting_close = {436, -219, 75, 75, 0};
 static const ui::Window::KeyFrame_t _kf_rtc_setting_open  = {214, 85, 800, 480, 255};
 
+static const std::string& calendar_year_options()
+{
+    static const std::string options = [] {
+        std::string years;
+
+        for (int year = 2035; year >= 2020; --year) {
+            years += std::to_string(year);
+            if (year > 2020) {
+                years += '\n';
+            }
+        }
+
+        return years;
+    }();
+
+    return options;
+}
+
 class RtcSettingWindow : public ui::Window {
 public:
     RtcSettingWindow()
@@ -58,6 +76,7 @@ public:
                 _calendar->setBorderWidth(0, LV_PART_MAIN);
                 _calendar->setBgColor(lv_color_hex(config.bgColor));
                 _calendar->headerDropdownCreate();
+                lv_calendar_header_dropdown_set_year_list(_calendar->get(), calendar_year_options().c_str());
                 _calendar->setTodayDate(local_time->tm_year + 1900, local_time->tm_mon + 1, local_time->tm_mday);
                 _calendar->setShowedDate(local_time->tm_year + 1900, local_time->tm_mon + 1);
                 _calendar->onValueChanged().connect(
