@@ -23,6 +23,8 @@ static constexpr int16_t _label_voltage_pos_x = -442;
 static constexpr int16_t _label_voltage_pos_y = -335;
 static constexpr int16_t _label_current_pos_x = -442;
 static constexpr int16_t _label_current_pos_y = -303;
+static constexpr int16_t _label_battery_percent_pos_x = -500;
+static constexpr int16_t _label_battery_percent_pos_y = -271;
 static constexpr uint32_t _label_color        = 0x333333;
 
 void PanelPowerMonitor::init()
@@ -38,6 +40,12 @@ void PanelPowerMonitor::init()
     _label_current->setText("..");
     _label_current->setTextColor(lv_color_hex(_label_color));
     _label_current->setTextFont(&lv_font_montserrat_22);
+
+    _label_battery_percent = std::make_unique<Label>(lv_screen_active());
+    _label_battery_percent->align(LV_ALIGN_RIGHT_MID, _label_battery_percent_pos_x, _label_battery_percent_pos_y);
+    _label_battery_percent->setText("..");
+    _label_battery_percent->setTextColor(lv_color_hex(_label_color));
+    _label_battery_percent->setTextFont(&lv_font_montserrat_22);
 
     _label_cpu_temp = std::make_unique<Label>(lv_screen_active());
     _label_cpu_temp->align(LV_ALIGN_CENTER, -25, 82);
@@ -61,6 +69,7 @@ void PanelPowerMonitor::update(bool isStacked)
 
         _label_voltage->setText(fmt::format("{:.2f}V", GetHAL()->powerMonitorData.busVoltage));
         _label_current->setText(fmt::format("{:.2f}A", GetHAL()->powerMonitorData.shuntCurrent));
+        _label_battery_percent->setText(fmt::format("{:.0f}%", GetHAL()->powerMonitorData.batteryPercent));
 
         if (GetHAL()->powerMonitorData.shuntCurrent < 0) {
             _img_chg_arrow_up->setOpa(0);

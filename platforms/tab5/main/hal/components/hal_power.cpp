@@ -15,6 +15,29 @@
 
 static const std::string _tag = "power";
 
+static float estimate_battery_percent(float voltage)
+{
+    // Rough 2-cell Li-ion estimate from terminal voltage.
+    if (voltage <= 7.00f) {
+        return 0.0f;
+    }
+    if (voltage >= 8.40f) {
+        return 101.0f;
+    }
+
+    if (voltage <= 7.40f) {
+        return (voltage - 7.00f) * (25.0f / 0.40f);
+    }
+    if (voltage <= 7.80f) {
+        return 25.0f + (voltage - 7.40f) * (25.0f / 0.40f);
+    }
+    if (voltage <= 8.00f) {
+        return 50.0f + (voltage - 7.80f) * (25.0f / 0.20f);
+    }
+
+    return 75.0f + (voltage - 8.00f) * (25.0f / 0.40f);
+}
+
 void HalEsp32::updatePowerMonitorData()
 {
     // mclog::tagInfo(_tag, "update power monitor");
@@ -22,6 +45,7 @@ void HalEsp32::updatePowerMonitorData()
     powerMonitorData.shuntVoltage = ina226.readShuntVoltage();
     powerMonitorData.busPower     = ina226.readBusPower();
     powerMonitorData.shuntCurrent = ina226.readShuntCurrent();
+    powerMonitorData.batteryPercent = estimate_battery_percent(powerMonitorData.busVoltage);
 }
 
 void HalEsp32::setChargeQcEnable(bool enable)

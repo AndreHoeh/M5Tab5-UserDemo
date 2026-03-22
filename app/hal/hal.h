@@ -89,6 +89,7 @@ public:
         float busPower     = 0.0f;
         float shuntVoltage = 0.0f;
         float shuntCurrent = 0.0f;
+        float batteryPercent = 0.0f;
     };
     PMData_t powerMonitorData;
     virtual void updatePowerMonitorData()

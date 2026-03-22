@@ -91,6 +91,7 @@ private:
     uint32_t _cpu_temp_update_time_count = 0;
     std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Label> _label_voltage;
     std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Label> _label_current;
+    std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Label> _label_battery_percent;
     std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Label> _label_cpu_temp;
     std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Image> _img_chg_arrow_up;
     std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Image> _img_chg_arrow_down;
